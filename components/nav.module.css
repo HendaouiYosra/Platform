@@ -1,0 +1,57 @@
+
+
+.header {
+  display: flex;
+  height: 3rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1rem;
+  border-bottom: 1px solid #eee;
+  background-color: #fff;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #444;
+  font-weight: 500;
+  position: relative;
+  padding-bottom: 4px;
+}
+
+.nav-link:hover {
+  color: #000;
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  height: 2px;
+  background-color: #f15c22;
+  width: 100%;
+  left: 0;
+  bottom: 0;
+}
+
+/* --------- Responsive Adjustments --------- */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+
+
+
+  .nav {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+}
