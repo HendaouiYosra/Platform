@@ -1,0 +1,87 @@
+.card {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  margin: 1rem 0;
+  flex: 1;
+  min-width: 300px;
+}
+
+.header {
+  margin-bottom: 0.75rem;
+}
+
+.label {
+  font-weight: 600;
+  color: #4f46e5;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.institution {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  margin: 0.5rem 0;
+  color: #333;
+}
+
+.section {
+  margin-top: 1rem;
+}
+
+.section p {
+  margin-top: 0.25rem;
+  line-height: 1.5;
+}
+
+.keywords {
+  background-color: #f1f5f9;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+.badges {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  color: white;
+}
+
+.practical {
+  background-color: #34a853;
+}
+
+.theoretical {
+  background-color: #1e88e5;
+}
+
+.junior {
+  background-color: #8e24aa;
+}
+
+.senior {
+  background-color: #f4511e;
+}

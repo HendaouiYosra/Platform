@@ -1,5 +1,3 @@
-
-
 .header {
   display: flex;
   height: 3rem;
@@ -13,6 +11,9 @@
 .logo {
   font-weight: 700;
   font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .nav {
@@ -33,13 +34,19 @@
 }
 
 .nav-link.active::after {
-  content: '';
+  content: "";
   position: absolute;
   height: 2px;
   background-color: #f15c22;
   width: 100%;
   left: 0;
   bottom: 0;
+}
+.logoImage {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  margin: 4px;
 }
 
 /* --------- Responsive Adjustments --------- */
@@ -48,7 +55,12 @@
     display: none;
   }
 
-
+  .logoText {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #000;
+    white-space: nowrap;
+  }
 
   .nav {
     flex-wrap: wrap;

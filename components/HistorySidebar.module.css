@@ -1,0 +1,92 @@
+.sidebar {
+  width: 250px;
+  background-color: #fff;
+  border-right: 1px solid #ddd;
+  padding: 1rem;
+  overflow-y: auto;
+  transition: width 0.3s ease;
+}
+
+.sidebarCollapsed {
+  width: 50px;
+  padding: 1rem 0.5rem;
+  overflow: hidden;
+}
+
+.sidebarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toggleSidebarButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.4rem;
+  color: #888;
+}
+
+.sidebarCollapsed .toggleSidebarButton i {
+  transform: rotate(180deg);
+}
+
+.sessionList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+}
+
+.sessionItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.sessionItem:hover {
+  background-color: #f0f0f0;
+}
+
+.sessionName {
+  flex: 1;
+  text-align: left;
+  cursor: pointer;
+}
+
+.activeSession {
+  background-color: #ff4d00;
+  color: white;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding-left: 0.5rem;
+}
+
+.deleteButton:hover {
+  color: #e00000;
+}
+
+.newSessionButton {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  color: white;
+  background-color: #ff4d00;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.newSessionButton:hover {
+  background-color: #e04400;
+}
