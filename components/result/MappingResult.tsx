@@ -55,7 +55,7 @@ const MappingResult = ({ data }: MappingResultProps) => {
       unmatched: [],
     },
   } = comparison;
-  alert(JSON.stringify(data, null, 2));
+ 
 
 const getDecisionClass = (decision: string) => {
   const lower = decision.toLowerCase();

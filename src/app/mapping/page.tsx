@@ -6,7 +6,7 @@ import MappingResult from "../../../components/result/MappingResult";
 import SaveMappingPopup from "../../../components/popup/SaveMappingPopup";
 import CourseCard from "../../../components/result/CourseCard";
 import { useRef, useEffect } from "react";
-const API_BASE = "https://3cd7f2036e5c.ngrok-free.app";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 type MappingSession = {
   id: string;
   name: string;

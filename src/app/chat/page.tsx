@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import styles from "./ChatPage.module.css";
 import HistorySidebar from "../../../components/HistorySidebar";
-
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 type Message = {
   role: "user" | "bot";
   content: string;
@@ -55,14 +55,11 @@ export default function ChatPage() {
       };
 
       try {
-        const res = await fetch(
-          "https://51e7-34-87-149-215.ngrok-free.app/upload_base64",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }
-        );
+        const res = await fetch(`${API_BASE}/upload_base64`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
         const data = await res.json();
         addMessage(
@@ -89,9 +86,9 @@ export default function ChatPage() {
     setActiveSessionId(newId);
   };
   const modelEndpointMap = {
-    qwen: "https://51e7-34-87-149-215.ngrok-free.app/chat-qwen",
-    gemini: "https://3b99b6b6acd8.ngrok-free.app/chat-gemini",
-    gpt: "https://002e-34-87-149-215.ngrok-free.app/chat-gpt",
+    qwen: `${API_BASE}/chat-qwen`,
+    gemini: `${API_BASE}/chat-gemini`,
+    gpt: `${API_BASE}/chat-gpt`,
   };
 
   const handleSend = async (e: React.FormEvent) => {
