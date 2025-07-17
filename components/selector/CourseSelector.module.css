@@ -1,0 +1,240 @@
+.container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.label {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.selectorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.selector {
+  width: 100%;
+  max-width: 320px;
+  position: relative;
+}
+
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 48px;
+}
+
+.trigger:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.selector.open .trigger {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.selector.disabled .trigger {
+  background: #f9fafb;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.text {
+  flex: 1;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text.placeholder {
+  color: #9ca3af;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.clearButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.clearButton:hover {
+  background: #dc2626;
+}
+
+.chevron {
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.chevron.rotated {
+  transform: rotate(180deg);
+}
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%; /* ensure it's same as .selector */
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.searchContainer {
+  position: relative;
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  
+}
+
+.searchIcon {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.searchInput:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.optionsList {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.option {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.2s ease;
+}
+
+.option:hover {
+  background: #f8fafc;
+}
+
+.option.selected {
+  background: #eff6ff;
+  border-left: 4px solid #3b82f6;
+}
+
+.option:last-child {
+  border-bottom: none;
+}
+
+.courseCode {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2937;
+  margin-bottom: 2px;
+}
+
+.courseTitle {
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.courseInstitution {
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.emptyMessage {
+  padding: 20px 16px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .trigger {
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+  
+  .text {
+    font-size: 13px;
+  }
+  
+  .dropdown {
+   width: 100%;
+  }
+  
+  .optionsList {
+    max-height: 200px;
+  }
+  
+  .option {
+    padding: 10px 12px;
+  }
+}

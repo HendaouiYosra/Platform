@@ -5,6 +5,7 @@ import styles from "./MappingPage.module.css";
 import MappingResult from "../../../components/result/MappingResult";
 import SaveMappingPopup from "../../../components/popup/SaveMappingPopup";
 import CourseCard from "../../../components/result/CourseCard";
+import CourseSelector from "../../../components/selector/CourseSelector";
 import { useRef, useEffect } from "react";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 type MappingSession = {
@@ -12,6 +13,8 @@ type MappingSession = {
   name: string;
   leftText: string;
   rightText: string;
+  leftId?: string;
+  rightId?: string;
 };
 
 export default function MappingPage() {
@@ -23,6 +26,8 @@ export default function MappingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [mapResult, setMapResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [allCourses, setAllCourses] = useState<any[]>([]);
+
   const resultRef = useRef<HTMLDivElement | null>(null);
   const activeSession = sessions.find((s) => s.id === activeSessionId);
   const [showPopup, setShowPopup] = useState(false);
@@ -32,6 +37,69 @@ export default function MappingPage() {
       prev.map((s) => (s.id === activeSessionId ? { ...s, [field]: value } : s))
     );
   };
+  const hideIdFromJson = (json: string | undefined) => {
+    try {
+      const parsed = JSON.parse(json || "{}");
+      delete parsed.id;
+      return JSON.stringify(parsed, null, 2); // formatted
+    } catch (e) {
+      return json || "";
+    }
+  };
+
+  //fetch the list of courses
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/courses`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
+        });
+        // Check for error response
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(" Server returned error:", errText);
+          return;
+        }
+        const data = await res.json();
+        console.log(" Got courses:", data);
+        setAllCourses(data.courses || []);
+      } catch (err) {
+        console.error("Fetch failed:", err);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  //handler of the course selector
+  const handleCourseSelect = (
+    selectedValue: string,
+    side: "left" | "right"
+  ) => {
+    const selected = allCourses.find(
+      (c) =>
+        `${c.course_code} - ${c.course_title} - ${c.course_institution}` ===
+        selectedValue
+    );
+    if (selected) {
+      const formatted = JSON.stringify(selected.course_data, null, 2);
+      updateSession(side === "left" ? "leftText" : "rightText", formatted);
+      const courseId = selected.course_data.id;
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === activeSessionId
+            ? {
+                ...s,
+                [side === "left" ? "leftId" : "rightId"]: courseId,
+              }
+            : s
+        )
+      );
+    }
+  };
+
   useEffect(() => {
     if (mapResult && resultRef.current) {
       resultRef.current.scrollIntoView({ behavior: "smooth" });
@@ -52,10 +120,12 @@ export default function MappingPage() {
         content: base64,
         message: "the course",
       };
+
       const isProgram = mappingMode === "courseToProgram" && side === "right";
       const endpoint = isProgram
         ? `${API_BASE}/extract_program`
         : `${API_BASE}/extract_skills`;
+
       setIsLoading(true);
       try {
         const res = await fetch(endpoint, {
@@ -65,18 +135,34 @@ export default function MappingPage() {
         });
 
         const data = await res.json();
-        const extracted = JSON.stringify(data.extracted, null, 2);
-        //alert(extracted);
-        updateSession(side === "left" ? "leftText" : "rightText", extracted);
+        const extractedData = data.extracted;
+        const courseId = data.course_id || extractedData.id; // ✅ Get from either place
+
+        const { id, ...cleanedData } = extractedData;
+        const cleanedText = JSON.stringify(cleanedData, null, 2);
+        updateSession(side === "left" ? "leftText" : "rightText", cleanedText);
+
+        // 🔒 Store courseId safely in the session
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === activeSessionId
+              ? {
+                  ...s,
+                  [side === "left" ? "leftId" : "rightId"]: courseId,
+                }
+              : s
+          )
+        );
       } catch (err) {
         console.error("❌ Upload error:", err);
       } finally {
-        setIsLoading(false); // Stop loading regardless of success or error
+        setIsLoading(false);
       }
     };
 
     reader.readAsDataURL(file);
   };
+
   const handleMap = async () => {
     if (!activeSession) return;
 
@@ -87,16 +173,28 @@ export default function MappingPage() {
     let payload;
 
     try {
-      payload =
-        mappingMode === "courseToCourse"
-          ? {
-              source_course: JSON.parse(activeSession.leftText),
-              target_course: JSON.parse(activeSession.rightText),
-            }
-          : {
-              course: JSON.parse(activeSession.leftText),
-              program: JSON.parse(activeSession.rightText),
-            };
+      if (mappingMode === "courseToCourse") {
+        const leftWithId = {
+          ...JSON.parse(activeSession.leftText),
+          id: activeSession.leftId,
+        };
+        const rightWithId = {
+          ...JSON.parse(activeSession.rightText),
+          id: activeSession.rightId,
+        };
+        payload = {
+          source_course: leftWithId,
+          target_course: rightWithId,
+        };
+      } else {
+        payload = {
+          course: {
+            ...JSON.parse(activeSession.leftText),
+            id: activeSession.leftId,
+          },
+          program: JSON.parse(activeSession.rightText),
+        };
+      }
     } catch (e) {
       setError("❌ Invalid JSON in input fields");
       setIsLoading(false);
@@ -117,16 +215,16 @@ export default function MappingPage() {
 
       if (!res.ok) {
         const errText = await res.text();
-        setError(`❌ Server error: ${errText}`);
+        setError(` Server error: ${errText}`);
         return;
       }
 
-      const result = await res.json(); // 🚫 no JSON.parse() here!
-      console.log("✅ Parsed result from backend:", result);
+      const result = await res.json(); //  no JSON.parse() here!
+      console.log(" Parsed result from backend:", result);
       setMapResult(result);
     } catch (err) {
-      console.error("❌ Mapping error:", err);
-      setError("❌ Could not complete mapping. Server error.");
+      console.error(" Mapping error:", err);
+      setError(" Could not complete mapping. Server error.");
     } finally {
       setIsLoading(false);
     }
@@ -202,6 +300,13 @@ export default function MappingPage() {
               <div className={styles.uploadBlock}>
                 <div className={styles.uploadHeader}>
                   <label className={styles.label}>{leftLabel}</label>
+                  <CourseSelector
+                    allCourses={allCourses}
+                    onSelect={handleCourseSelect}
+                    label={leftLabel}
+                    side="left"
+                  />
+
                   <label className={styles.uploadLabel}>
                     Upload File
                     <input
@@ -213,7 +318,7 @@ export default function MappingPage() {
                 </div>
                 <textarea
                   className={styles.textarea}
-                  value={activeSession?.leftText || ""}
+                  value={hideIdFromJson(activeSession?.leftText)}
                   placeholder={`Extracted ${leftLabel.toLowerCase()}...`}
                   onChange={(e) => updateSession("leftText", e.target.value)}
                 />
@@ -222,6 +327,13 @@ export default function MappingPage() {
               <div className={styles.uploadBlock}>
                 <div className={styles.uploadHeader}>
                   <label className={styles.label}>{rightLabel}</label>
+                  <CourseSelector
+                    allCourses={allCourses}
+                    onSelect={handleCourseSelect}
+                    label={rightLabel}
+                    side="right"
+                  />
+
                   <label className={styles.uploadLabel}>
                     Upload File
                     <input
@@ -233,7 +345,7 @@ export default function MappingPage() {
                 </div>
                 <textarea
                   className={styles.textarea}
-                  value={activeSession?.rightText || ""}
+                  value={hideIdFromJson(activeSession?.rightText)}
                   placeholder={`Extracted ${rightLabel.toLowerCase()}...`}
                   onChange={(e) => updateSession("rightText", e.target.value)}
                 />
@@ -283,15 +395,65 @@ export default function MappingPage() {
       </div>
       {showPopup && (
         <SaveMappingPopup
+          isOpen={true}
           onClose={() => setShowPopup(false)}
-          onSubmit={(data) => {
-            console.log("✅ Data received from popup:", data);
-            // You can use `data.mapResult`, `data.leftCourse`, etc.
-          }}
           popupData={{
             mapResult,
-            leftCourseJSON: activeSession?.leftText,
-            rightCourseJSON: activeSession?.rightText,
+            leftCourseJSON:
+              activeSession?.leftText && JSON.parse(activeSession.leftText),
+            rightCourseJSON:
+              activeSession?.rightText && JSON.parse(activeSession.rightText),
+            leftId: activeSession?.leftId, // ✅ Add this
+            rightId: activeSession?.rightId,
+          }}
+          onSubmit={async (data) => {
+            try {
+              const currentSession = sessions.find(
+                (s) => s.id === activeSessionId
+              );
+
+              if (!currentSession?.leftId || !currentSession?.rightId) {
+                alert(
+                  "❌ Cannot save: course ID(s) missing. Please re-upload or reselect courses."
+                );
+                return;
+              }
+
+              // Inject IDs back before saving
+              const leftWithId = {
+                ...data.leftCourseJSON,
+                id: currentSession.leftId,
+              };
+
+              const rightWithId = {
+                ...data.rightCourseJSON,
+                id: currentSession.rightId,
+              };
+
+              const payload = {
+                source_course: leftWithId,
+                target_course: rightWithId,
+                mapping_result: data.mapResult,
+              };
+
+              const res = await fetch(`${API_BASE}/save_course_mapping`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+
+              const result = await res.json();
+              if (result.status === "success") {
+                alert("✅ Courses and mapping saved!");
+                setShowPopup(false);
+              } else {
+                console.error("❌ Failed to save:", result.error);
+                alert("❌ Failed to save mapping");
+              }
+            } catch (err) {
+              console.error("❌ Error submitting mapping:", err);
+              alert("❌ Unexpected error occurred");
+            }
           }}
         />
       )}

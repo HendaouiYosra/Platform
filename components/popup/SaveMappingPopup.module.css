@@ -1,47 +1,230 @@
-.popupContainer {
+.saveMappingPopup {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 10000;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.4); /* semi-transparent backdrop */
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
 .popupContent {
   background: white;
   padding: 2rem;
-  border-radius: 10px;
-  max-width: 500px;
   width: 90%;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  max-width: 1000px;
+  max-height: 95vh;
+  overflow-y: auto;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.buttonGroup {
-  margin-top: 1rem;
+.popupHeader {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  color: #1f2937;
+}
+
+.csvSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.csvDescription {
+  font-size: 0.9rem;
+  color: #475569;
+  margin: 0;
+}
+
+.csvButton {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.csvButton:hover {
+  background-color: #059669;
+}
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.formLabel {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.formLabelSmall {
+  font-weight: 500;
+  color: #4b5563;
+  font-size: 0.8rem;
+}
+
+.formInput {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.formInputSmall {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.formInputSmall:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.formTextarea {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  background: #f9fafb;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.formTextarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: white;
+}
+
+.comparisonGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.comparisonSection {
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.formRow {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.formGroup {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.skillsSection {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.outcomesSection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.formActions {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
 }
 
-.confirmButton,
-.cancelButton {
-  padding: 0.5rem 1rem;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-  border-radius: 6px;
-}
-
-.confirmButton {
-  background-color: #70ae1e;
+.submitButton {
+  background-color: #1d4ed8;
   color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submitButton:hover {
+  background-color: #1e40af;
 }
 
 .cancelButton {
-  background-color: #e0e0e0;
-  color: #333;
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancelButton:hover {
+  background-color: #e5e7eb;
+}
+
+@media (max-width: 768px) {
+  .comparisonGrid,
+  .skillsSection,
+  .outcomesSection {
+    grid-template-columns: 1fr;
+  }
+
+  .formRow {
+    flex-direction: column;
+  }
+
+  .csvSection {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
 }

@@ -88,9 +88,10 @@
 
 .uploadBlock {
   flex: 1;
-  display: flex;
+   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  text-align: center;
 }
 
 .uploadHeader {
