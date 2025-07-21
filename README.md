@@ -17,6 +17,8 @@ Before you start, create a `.env.local` file at the root of the project with the
 NEXT_PUBLIC_API_URL=your_backend_api_url
 Replace `your_backend_api_url` with the actual URL of the backend API.
 
-1. Clone the repository. 
-2. Run `npm install` to install dependencies.
-3. Start the development server:
+1. Clone the repository.
+   git clone https://github.com/HendaouiYosra/Platform
+   cd Platform
+3. Run `npm install` to install dependencies.
+4. Run `npm run dev` to run the server. Access the application at [http://localhost:3000](http://localhost:3000).
