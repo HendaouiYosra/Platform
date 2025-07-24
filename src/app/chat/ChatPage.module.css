@@ -89,6 +89,8 @@
 .modelSelectorBox {
   margin: 0 auto;
   width: fit-content;
+  background:#f0f0f0;
+  width:100%;
 }
 .modelSelectorBox label {
   font-weight: 600;

@@ -20,10 +20,44 @@ export default function ChatPage() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [newSessionModel, setNewSessionModel] = useState<
+    "qwen" | "gemini" | "gpt"
+  >("gemini");
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
   const messages = activeSession?.messages || [];
   const selectedModel = activeSession?.model || "gemini";
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/conversations`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
+        });
+        
+        const data = await res.json();
+        
+        const formatted = data.conversations.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          model: c.model,
+          messages: c.messages.map((m: any) => ({
+            role: m.sender === "user" ? "user" : "bot",
+            content: m.text,
+          })),
+        }));
+        setSessions(formatted);
+        if (formatted.length > 0) {
+          setActiveSessionId(formatted[0].id); // optional: auto-select latest
+        }
+      } catch (err) {
+        console.error("Failed to fetch conversations", err);
+      }
+    };
+
+    fetchConversations();
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -39,7 +73,17 @@ export default function ChatPage() {
       )
     );
   };
-
+const deleteConversation = async (id: string) => {
+  try {
+    await fetch(`${API_BASE}/conversations/${id}`, {
+      method: "DELETE",
+    });
+    setSessions((prev) => prev.filter((s) => s.id !== id));
+    if (activeSessionId === id) setActiveSessionId(null);
+  } catch (err) {
+    console.error("Failed to delete conversation", err);
+  }
+};
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeSessionId) return;
@@ -52,8 +96,9 @@ export default function ChatPage() {
         filename: file.name,
         content: base64,
         message: "Chunk this file please!",
+        conversation_id: activeSessionId,
       };
-
+      alert(activeSessionId);
       try {
         const res = await fetch(`${API_BASE}/upload_base64`, {
           method: "POST",
@@ -74,17 +119,35 @@ export default function ChatPage() {
     reader.readAsDataURL(file);
   };
 
-  const createNewSession = () => {
-    const newId = Date.now().toString();
-    const newSession: ChatSession = {
-      id: newId,
-      name: `Session ${sessions.length + 1}`,
-      model: selectedModel,
-      messages: [],
-    };
-    setSessions((prev) => [...prev, newSession]);
-    setActiveSessionId(newId);
+  const createNewSession = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/create_conversation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `Session ${sessions.length + 1}`,
+          model: newSessionModel,
+        }),
+      });
+
+      const data = await res.json();
+      const newId = data.id;
+
+      const newSession: ChatSession = {
+        id: newId,
+        name: `Session ${sessions.length + 1}`,
+        model: newSessionModel,
+        messages: [],
+      };
+
+      setSessions((prev) => [...prev, newSession]);
+      setActiveSessionId(newId);
+      setModelDropdown("gemini");
+    } catch (err) {
+      console.error("Failed to create conversation", err);
+    }
   };
+
   const modelEndpointMap = {
     qwen: `${API_BASE}/chat-qwen`,
     gemini: `${API_BASE}/chat-gemini`,
@@ -104,7 +167,7 @@ export default function ChatPage() {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, conversation_id: activeSessionId }),
       });
 
       const data = await res.json();
@@ -119,31 +182,27 @@ export default function ChatPage() {
     <div className={styles.chatLayout}>
       <HistorySidebar
         title="History"
-        items={sessions.map((s) => ({ id: s.id, name: s.name }))}
+        items={sessions.map((s) => ({
+          id: s.id,
+          name: `[${s.model.toUpperCase()}] ${s.name}`,
+        }))}
         activeId={activeSessionId}
         onSelect={(id) => setActiveSessionId(id)}
-        onDelete={(id) => {
-          setSessions((prev) => prev.filter((s) => s.id !== id));
-          if (activeSessionId === id) setActiveSessionId(null);
-        }}
+        onDelete={deleteConversation}
         onAdd={createNewSession}
       />
 
       {/* Main Chat Area */}
       <div className={styles.chatArea}>
         <div className={styles.modelSelectorBox}>
+          <span>Select a model to start a new conversation:</span>
           <select
             id="model-select"
             className={styles.modelSelect}
-            value={selectedModel}
+            value={newSessionModel}
             onChange={(e) => {
               const model = e.target.value as "qwen" | "gemini" | "gpt";
-              if (!activeSessionId) return;
-              setSessions((prev) =>
-                prev.map((s) =>
-                  s.id === activeSessionId ? { ...s, model } : s
-                )
-              );
+              setNewSessionModel(model);
             }}
           >
             <option value="qwen">Qwen2.5 14B</option>

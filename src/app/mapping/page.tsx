@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import HistorySidebar from "../../../components/HistorySidebar";
+
 import styles from "./MappingPage.module.css";
 import MappingResult from "../../../components/result/MappingResult";
 import SaveMappingPopup from "../../../components/popup/SaveMappingPopup";
@@ -15,27 +15,51 @@ type MappingSession = {
   rightText: string;
   leftId?: string;
   rightId?: string;
+  mapResult?: any;
 };
 
 export default function MappingPage() {
   const [mappingMode, setMappingMode] = useState<
     "courseToCourse" | "courseToProgram"
   >("courseToCourse");
-  const [sessions, setSessions] = useState<MappingSession[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+
+const [sessions, setSessions] = useState<{
+  courseToCourse: MappingSession;
+  courseToProgram: MappingSession;
+}>({
+  courseToCourse: {
+    id: "ctc",
+    name: "Course to Course",
+    leftText: "",
+    rightText: "",
+  },
+  courseToProgram: {
+    id: "ctp",
+    name: "Course to Program",
+    leftText: "",
+    rightText: "",
+  },
+});
+const session = sessions[mappingMode];
   const [isLoading, setIsLoading] = useState(false);
   const [mapResult, setMapResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [allCourses, setAllCourses] = useState<any[]>([]);
+  const [selectedLeftCourse, setSelectedLeftCourse] = useState<string>("");
+  const [selectedRightCourse, setSelectedRightCourse] = useState<string>("");
 
   const resultRef = useRef<HTMLDivElement | null>(null);
-  const activeSession = sessions.find((s) => s.id === activeSessionId);
+
   const [showPopup, setShowPopup] = useState(false);
   const updateSession = (field: "leftText" | "rightText", value: string) => {
-    if (!activeSessionId) return;
-    setSessions((prev) =>
-      prev.map((s) => (s.id === activeSessionId ? { ...s, [field]: value } : s))
-    );
+    setSessions((prev) => ({
+  ...prev,
+  [mappingMode]: {
+    ...prev[mappingMode],
+    
+    [field]: value
+  },
+}));
   };
   const hideIdFromJson = (json: string | undefined) => {
     try {
@@ -78,25 +102,31 @@ export default function MappingPage() {
     selectedValue: string,
     side: "left" | "right"
   ) => {
+    if (side === "left") {
+      setSelectedLeftCourse(selectedValue);
+    } else {
+      setSelectedRightCourse(selectedValue);
+    }
+
     const selected = allCourses.find(
       (c) =>
         `${c.course_code} - ${c.course_title} - ${c.course_institution}` ===
         selectedValue
     );
+
     if (selected) {
       const formatted = JSON.stringify(selected.course_data, null, 2);
       updateSession(side === "left" ? "leftText" : "rightText", formatted);
       const courseId = selected.course_data.id;
-      setSessions((prev) =>
-        prev.map((s) =>
-          s.id === activeSessionId
-            ? {
-                ...s,
-                [side === "left" ? "leftId" : "rightId"]: courseId,
-              }
-            : s
-        )
-      );
+
+      setSessions((prev) => ({
+  ...prev,
+  [mappingMode]: {
+    ...prev[mappingMode],
+    [side === "left" ? "leftId" : "rightId"]: courseId, // ✅ now inside courseToCourse or courseToProgram
+  },
+}));
+
     }
   };
 
@@ -109,8 +139,9 @@ export default function MappingPage() {
     e: React.ChangeEvent<HTMLInputElement>,
     side: "left" | "right"
   ) => {
+    setMapResult(null);
     const file = e.target.files?.[0];
-    if (!file || !activeSessionId) return;
+    if (!file) return;
 
     const reader = new FileReader();
     reader.onloadend = async () => {
@@ -136,25 +167,23 @@ export default function MappingPage() {
 
         const data = await res.json();
         const extractedData = data.extracted;
-        const courseId = data.course_id || extractedData.id; // ✅ Get from either place
+        const courseId = data.course_id || extractedData.id; // Get from either place
 
         const { id, ...cleanedData } = extractedData;
         const cleanedText = JSON.stringify(cleanedData, null, 2);
         updateSession(side === "left" ? "leftText" : "rightText", cleanedText);
 
-        // 🔒 Store courseId safely in the session
-        setSessions((prev) =>
-          prev.map((s) =>
-            s.id === activeSessionId
-              ? {
-                  ...s,
-                  [side === "left" ? "leftId" : "rightId"]: courseId,
-                }
-              : s
-          )
-        );
+        // Store courseId safely in the session
+        setSessions((prev) => ({
+  ...prev,
+  [mappingMode]: {
+    ...prev[mappingMode],
+    [side === "left" ? "leftText" : "rightText"]: cleanedText,
+    [side === "left" ? "leftId" : "rightId"]: courseId, //  this line is missing!
+  },
+}));
       } catch (err) {
-        console.error("❌ Upload error:", err);
+        console.error(" Upload error:", err);
       } finally {
         setIsLoading(false);
       }
@@ -162,9 +191,8 @@ export default function MappingPage() {
 
     reader.readAsDataURL(file);
   };
-
   const handleMap = async () => {
-    if (!activeSession) return;
+    if (!session) return;
 
     setIsLoading(true);
     setError(null);
@@ -175,12 +203,12 @@ export default function MappingPage() {
     try {
       if (mappingMode === "courseToCourse") {
         const leftWithId = {
-          ...JSON.parse(activeSession.leftText),
-          id: activeSession.leftId,
+          ...JSON.parse(session.leftText),
+          id: session.leftId,
         };
         const rightWithId = {
-          ...JSON.parse(activeSession.rightText),
-          id: activeSession.rightId,
+          ...JSON.parse(session.rightText),
+          id: session.rightId,
         };
         payload = {
           source_course: leftWithId,
@@ -189,14 +217,14 @@ export default function MappingPage() {
       } else {
         payload = {
           course: {
-            ...JSON.parse(activeSession.leftText),
-            id: activeSession.leftId,
+            ...JSON.parse(session.leftText),
+            id: session.leftId,
           },
-          program: JSON.parse(activeSession.rightText),
+          program: JSON.parse(session.rightText),
         };
       }
     } catch (e) {
-      setError("❌ Invalid JSON in input fields");
+      setError(" Invalid JSON in input fields");
       setIsLoading(false);
       return;
     }
@@ -219,27 +247,26 @@ export default function MappingPage() {
         return;
       }
 
-      const result = await res.json(); //  no JSON.parse() here!
-      console.log(" Parsed result from backend:", result);
+      const result = await res.json();
+
+      console.log("Parsed result from backend:", result);
+
+      //  Sync mapResult state for UI + session storage
       setMapResult(result);
+      setSessions((prev) => ({
+  ...prev,
+  [mappingMode]: {
+    ...prev[mappingMode],
+    mapResult: result,
+  },
+}));
+
     } catch (err) {
-      console.error(" Mapping error:", err);
-      setError(" Could not complete mapping. Server error.");
+      console.error("Mapping error:", err);
+      setError("Could not complete mapping. Server error.");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const createNewSession = () => {
-    const newId = crypto.randomUUID();
-    const newSession: MappingSession = {
-      id: newId,
-      name: `Mapping ${sessions.length + 1}`,
-      leftText: "",
-      rightText: "",
-    };
-    setSessions((prev) => [...prev, newSession]);
-    setActiveSessionId(newId);
   };
 
   const leftLabel = "Course 1";
@@ -254,18 +281,6 @@ export default function MappingPage() {
       )}
 
       <div className={styles.chatLayout}>
-        <HistorySidebar
-          title="History"
-          items={sessions.map((s) => ({ id: s.id, name: s.name }))}
-          activeId={activeSessionId}
-          onSelect={(id) => setActiveSessionId(id)}
-          onDelete={(id) => {
-            setSessions((prev) => prev.filter((s) => s.id !== id));
-            if (activeSessionId === id) setActiveSessionId(null);
-          }}
-          onAdd={createNewSession}
-        />
-
         <div className={styles.chatArea}>
           <div className={styles.titleContainer}>
             <h1 className={styles.heading}>
@@ -280,7 +295,13 @@ export default function MappingPage() {
                   className={`${styles.toggleButton} ${
                     mappingMode === "courseToCourse" ? styles.active : ""
                   }`}
-                  onClick={() => setMappingMode("courseToCourse")}
+                  onClick={() => {
+  setMappingMode("courseToCourse");
+  setSelectedLeftCourse("");
+  setSelectedRightCourse("");
+  setMapResult(null);
+  setError(null);
+}}
                 >
                   Course to Course
                 </button>
@@ -288,7 +309,12 @@ export default function MappingPage() {
                   className={`${styles.toggleButton} ${
                     mappingMode === "courseToProgram" ? styles.active : ""
                   }`}
-                  onClick={() => setMappingMode("courseToProgram")}
+                  onClick={() => {setMappingMode("courseToProgram");
+                    setSelectedLeftCourse("");
+  setSelectedRightCourse("");
+  setMapResult(null);
+  setError(null);
+                  }}
                 >
                   Course to Program
                 </button>
@@ -304,6 +330,7 @@ export default function MappingPage() {
                     allCourses={allCourses}
                     onSelect={handleCourseSelect}
                     label={leftLabel}
+                    selectedValue={selectedLeftCourse}
                     side="left"
                   />
 
@@ -318,7 +345,7 @@ export default function MappingPage() {
                 </div>
                 <textarea
                   className={styles.textarea}
-                  value={hideIdFromJson(activeSession?.leftText)}
+                  value={hideIdFromJson(session?.leftText)}
                   placeholder={`Extracted ${leftLabel.toLowerCase()}...`}
                   onChange={(e) => updateSession("leftText", e.target.value)}
                 />
@@ -332,6 +359,7 @@ export default function MappingPage() {
                     onSelect={handleCourseSelect}
                     label={rightLabel}
                     side="right"
+                    selectedValue={selectedRightCourse}
                   />
 
                   <label className={styles.uploadLabel}>
@@ -345,21 +373,21 @@ export default function MappingPage() {
                 </div>
                 <textarea
                   className={styles.textarea}
-                  value={hideIdFromJson(activeSession?.rightText)}
+                  value={hideIdFromJson(session?.rightText)}
                   placeholder={`Extracted ${rightLabel.toLowerCase()}...`}
                   onChange={(e) => updateSession("rightText", e.target.value)}
                 />
               </div>
             </div>
-            {activeSession?.leftText && activeSession?.rightText && (
+            {session?.leftText && session?.rightText && (
               <div className={styles.dualPanel}>
                 <CourseCard
                   label="Course 1"
-                  data={JSON.parse(activeSession.leftText)}
+                  data={JSON.parse(session.leftText)}
                 />
                 <CourseCard
                   label={rightLabel}
-                  data={JSON.parse(activeSession.rightText)}
+                  data={JSON.parse(session.rightText)}
                 />
               </div>
             )}
@@ -399,22 +427,19 @@ export default function MappingPage() {
           onClose={() => setShowPopup(false)}
           popupData={{
             mapResult,
-            leftCourseJSON:
-              activeSession?.leftText && JSON.parse(activeSession.leftText),
+            leftCourseJSON: session?.leftText && JSON.parse(session.leftText),
             rightCourseJSON:
-              activeSession?.rightText && JSON.parse(activeSession.rightText),
-            leftId: activeSession?.leftId, // ✅ Add this
-            rightId: activeSession?.rightId,
+              session?.rightText && JSON.parse(session.rightText),
+            leftId: session?.leftId, // Add this
+            rightId: session?.rightId,
           }}
           onSubmit={async (data) => {
             try {
-              const currentSession = sessions.find(
-                (s) => s.id === activeSessionId
-              );
+              const currentSession = session;
 
               if (!currentSession?.leftId || !currentSession?.rightId) {
                 alert(
-                  "❌ Cannot save: course ID(s) missing. Please re-upload or reselect courses."
+                  " Cannot save: course ID(s) missing. Please re-upload or reselect courses."
                 );
                 return;
               }
@@ -443,16 +468,28 @@ export default function MappingPage() {
               });
 
               const result = await res.json();
-              if (result.status === "success") {
-                alert("✅ Courses and mapping saved!");
+              if (result.status === "success" || result.status === "updated") {
+                alert(" Courses and mapping saved!");
+                setSessions((prev) => ({
+  ...prev,
+  [mappingMode]: {
+    ...prev[mappingMode],
+    mapResult: result,
+  },
+}));
+
+                setMapResult(data.mapResult); //  Update main UI result too
                 setShowPopup(false);
               } else {
-                console.error("❌ Failed to save:", result.error);
-                alert("❌ Failed to save mapping");
+                console.error(
+                  " Failed to save:",
+                  result.error || result.message
+                );
+                alert(" Failed to save mapping");
               }
             } catch (err) {
-              console.error("❌ Error submitting mapping:", err);
-              alert("❌ Unexpected error occurred");
+              console.error(" Error submitting mapping:", err);
+              alert(" Unexpected error occurred");
             }
           }}
         />

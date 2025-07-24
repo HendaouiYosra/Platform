@@ -1,3 +1,5 @@
+"use client";
+import { useEffect } from "react";
 import { useState } from "react";
 import styles from './CourseSelector.module.css';
 interface SaveMappingPopupProps {
@@ -13,9 +15,12 @@ interface SaveMappingPopupProps {
     rightCourseJSON: string;
   };
 }
-const CourseSelector = ({ allCourses, onSelect, label, side }) => {
+const CourseSelector = ({ allCourses, onSelect, label, side ,selectedValue}) => {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  useEffect(() => {
+    setQuery(selectedValue || "");
+  }, [selectedValue]);
 
   const filteredCourses = allCourses.filter((c) =>
     `${c.course_code} - ${c.course_title} - ${c.course_institution}`
