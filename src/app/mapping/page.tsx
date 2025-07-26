@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-
+import { useCourseStore } from "../../../lib/stores/courseStore";
 import styles from "./MappingPage.module.css";
 import MappingResult from "../../../components/result/MappingResult";
 import SaveMappingPopup from "../../../components/popup/SaveMappingPopup";
@@ -23,28 +23,28 @@ export default function MappingPage() {
     "courseToCourse" | "courseToProgram"
   >("courseToCourse");
 
-const [sessions, setSessions] = useState<{
-  courseToCourse: MappingSession;
-  courseToProgram: MappingSession;
-}>({
-  courseToCourse: {
-    id: "ctc",
-    name: "Course to Course",
-    leftText: "",
-    rightText: "",
-  },
-  courseToProgram: {
-    id: "ctp",
-    name: "Course to Program",
-    leftText: "",
-    rightText: "",
-  },
-});
-const session = sessions[mappingMode];
+  const [sessions, setSessions] = useState<{
+    courseToCourse: MappingSession;
+    courseToProgram: MappingSession;
+  }>({
+    courseToCourse: {
+      id: "ctc",
+      name: "Course to Course",
+      leftText: "",
+      rightText: "",
+    },
+    courseToProgram: {
+      id: "ctp",
+      name: "Course to Program",
+      leftText: "",
+      rightText: "",
+    },
+  });
+  const session = sessions[mappingMode];
   const [isLoading, setIsLoading] = useState(false);
   const [mapResult, setMapResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [allCourses, setAllCourses] = useState<any[]>([]);
+  const { courses: allCourses, fetchCourses, addCourse } = useCourseStore();
   const [selectedLeftCourse, setSelectedLeftCourse] = useState<string>("");
   const [selectedRightCourse, setSelectedRightCourse] = useState<string>("");
 
@@ -53,13 +53,13 @@ const session = sessions[mappingMode];
   const [showPopup, setShowPopup] = useState(false);
   const updateSession = (field: "leftText" | "rightText", value: string) => {
     setSessions((prev) => ({
-  ...prev,
-  [mappingMode]: {
-    ...prev[mappingMode],
-    
-    [field]: value
-  },
-}));
+      ...prev,
+      [mappingMode]: {
+        ...prev[mappingMode],
+
+        [field]: value,
+      },
+    }));
   };
   const hideIdFromJson = (json: string | undefined) => {
     try {
@@ -70,9 +70,13 @@ const session = sessions[mappingMode];
       return json || "";
     }
   };
-
-  //fetch the list of courses
   useEffect(() => {
+    if (allCourses.length === 0) {
+      fetchCourses();
+    }
+  }, []);
+  //fetch the list of courses
+  /*useEffect(() => {
     const fetchCourses = async () => {
       try {
         const res = await fetch(`${API_BASE}/courses`, {
@@ -95,7 +99,7 @@ const session = sessions[mappingMode];
     };
 
     fetchCourses();
-  }, []);
+  }, []);*/
 
   //handler of the course selector
   const handleCourseSelect = (
@@ -120,13 +124,12 @@ const session = sessions[mappingMode];
       const courseId = selected.course_data.id;
 
       setSessions((prev) => ({
-  ...prev,
-  [mappingMode]: {
-    ...prev[mappingMode],
-    [side === "left" ? "leftId" : "rightId"]: courseId, // ✅ now inside courseToCourse or courseToProgram
-  },
-}));
-
+        ...prev,
+        [mappingMode]: {
+          ...prev[mappingMode],
+          [side === "left" ? "leftId" : "rightId"]: courseId, // ✅ now inside courseToCourse or courseToProgram
+        },
+      }));
     }
   };
 
@@ -175,13 +178,13 @@ const session = sessions[mappingMode];
 
         // Store courseId safely in the session
         setSessions((prev) => ({
-  ...prev,
-  [mappingMode]: {
-    ...prev[mappingMode],
-    [side === "left" ? "leftText" : "rightText"]: cleanedText,
-    [side === "left" ? "leftId" : "rightId"]: courseId, //  this line is missing!
-  },
-}));
+          ...prev,
+          [mappingMode]: {
+            ...prev[mappingMode],
+            [side === "left" ? "leftText" : "rightText"]: cleanedText,
+            [side === "left" ? "leftId" : "rightId"]: courseId, //  this line is missing!
+          },
+        }));
       } catch (err) {
         console.error(" Upload error:", err);
       } finally {
@@ -232,7 +235,7 @@ const session = sessions[mappingMode];
     const endpoint =
       mappingMode === "courseToCourse"
         ? `${API_BASE}/map_course_to_course`
-        : `${API_BASE}/map_program`;
+        : `${API_BASE}/map_course_to_program_outcomes`;
 
     try {
       const res = await fetch(endpoint, {
@@ -250,17 +253,16 @@ const session = sessions[mappingMode];
       const result = await res.json();
 
       console.log("Parsed result from backend:", result);
-
+      alert(result);
       //  Sync mapResult state for UI + session storage
       setMapResult(result);
       setSessions((prev) => ({
-  ...prev,
-  [mappingMode]: {
-    ...prev[mappingMode],
-    mapResult: result,
-  },
-}));
-
+        ...prev,
+        [mappingMode]: {
+          ...prev[mappingMode],
+          mapResult: result,
+        },
+      }));
     } catch (err) {
       console.error("Mapping error:", err);
       setError("Could not complete mapping. Server error.");
@@ -296,12 +298,12 @@ const session = sessions[mappingMode];
                     mappingMode === "courseToCourse" ? styles.active : ""
                   }`}
                   onClick={() => {
-  setMappingMode("courseToCourse");
-  setSelectedLeftCourse("");
-  setSelectedRightCourse("");
-  setMapResult(null);
-  setError(null);
-}}
+                    setMappingMode("courseToCourse");
+                    setSelectedLeftCourse("");
+                    setSelectedRightCourse("");
+                    setMapResult(null);
+                    setError(null);
+                  }}
                 >
                   Course to Course
                 </button>
@@ -309,11 +311,12 @@ const session = sessions[mappingMode];
                   className={`${styles.toggleButton} ${
                     mappingMode === "courseToProgram" ? styles.active : ""
                   }`}
-                  onClick={() => {setMappingMode("courseToProgram");
+                  onClick={() => {
+                    setMappingMode("courseToProgram");
                     setSelectedLeftCourse("");
-  setSelectedRightCourse("");
-  setMapResult(null);
-  setError(null);
+                    setSelectedRightCourse("");
+                    setMapResult(null);
+                    setError(null);
                   }}
                 >
                   Course to Program
@@ -354,13 +357,15 @@ const session = sessions[mappingMode];
               <div className={styles.uploadBlock}>
                 <div className={styles.uploadHeader}>
                   <label className={styles.label}>{rightLabel}</label>
-                  <CourseSelector
-                    allCourses={allCourses}
-                    onSelect={handleCourseSelect}
-                    label={rightLabel}
-                    side="right"
-                    selectedValue={selectedRightCourse}
-                  />
+                  {mappingMode !== "courseToProgram" && (
+                    <CourseSelector
+                      allCourses={allCourses}
+                      onSelect={handleCourseSelect}
+                      label={rightLabel}
+                      selectedValue={selectedRightCourse}
+                      side="right"
+                    />
+                  )}
 
                   <label className={styles.uploadLabel}>
                     Upload File
@@ -379,18 +384,20 @@ const session = sessions[mappingMode];
                 />
               </div>
             </div>
-            {session?.leftText && session?.rightText && (
-              <div className={styles.dualPanel}>
-                <CourseCard
-                  label="Course 1"
-                  data={JSON.parse(session.leftText)}
-                />
-                <CourseCard
-                  label={rightLabel}
-                  data={JSON.parse(session.rightText)}
-                />
-              </div>
-            )}
+            {mappingMode === "courseToCourse" &&
+              session?.leftText &&
+              session?.rightText && (
+                <div className={styles.dualPanel}>
+                  <CourseCard
+                    label="Course 1"
+                    data={JSON.parse(session.leftText)}
+                  />
+                  <CourseCard
+                    label={rightLabel}
+                    data={JSON.parse(session.rightText)}
+                  />
+                </div>
+              )}
 
             <div className={styles.mapButtonWrapper}>
               <button className={styles.mapButton} onClick={handleMap}>
@@ -471,15 +478,21 @@ const session = sessions[mappingMode];
               if (result.status === "success" || result.status === "updated") {
                 alert(" Courses and mapping saved!");
                 setSessions((prev) => ({
-  ...prev,
-  [mappingMode]: {
-    ...prev[mappingMode],
-    mapResult: result,
-  },
-}));
+                  ...prev,
+                  [mappingMode]: {
+                    ...prev[mappingMode],
+                    mapResult: result,
+                  },
+                }));
 
                 setMapResult(data.mapResult); //  Update main UI result too
                 setShowPopup(false);
+                addCourse({
+                  course_code: leftWithId.course_code,
+                  course_title: leftWithId.course_title,
+                  course_institution: leftWithId.course_institution,
+                  course_data: leftWithId,
+                });
               } else {
                 console.error(
                   " Failed to save:",
