@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import styles from "./SaveMappingPopup.module.css";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 interface CourseData {
   institution: string;
   institutional_type: string;
@@ -89,6 +90,7 @@ export default function SaveMappingPopup({
   );
 
   if (!isOpen) return null;
+const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (field: string, value: string) => {
     setMappingData((prev) => ({
@@ -128,41 +130,7 @@ export default function SaveMappingPopup({
     }));
   };
 
-  const saveAsCSV = () => {
-    const csvData = [
-      [
-        "Source Course",
-        "Course Code",
-        "Term",
-        "Target Course",
-        "Decision",
-        "Comments",
-      ],
-      [
-        popupData.leftCourseJSON.course_title,
-        popupData.leftCourseJSON.course_code,
-        popupData.leftCourseJSON.course_term_date,
-        popupData.rightCourseJSON.course_title,
-        mappingData.decision,
-        mappingData.Comments,
-      ],
-    ];
-
-    const csvContent = csvData
-      .map((row) =>
-        row.map((field) => `"${field.replace(/"/g, '""')}"`).join(",")
-      )
-      .join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "mapping_result.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
+ 
   const handleSubmit = () => {
     onSubmit({
       mapResult: mappingData,
@@ -170,7 +138,31 @@ export default function SaveMappingPopup({
       rightCourseJSON: popupData.rightCourseJSON,
     });
   };
+const buildRow = () => ({
+    "Transfer Institution": popupData.leftCourseJSON.course_institution || popupData.leftCourseJSON.institution || "",
+    "Transfer Course": popupData.leftCourseJSON.course_title || "",
+    "Transfer Course Term": popupData.leftCourseJSON.course_term_date || "",
+    "Requested Equivalent": popupData.rightCourseJSON.course_title || "",
+    "Decision": mappingData.decision || "",
+    "Rationale/Comments": mappingData.Comments || "",
+    // "Due" left out → backend auto-fills
+  });
 
+  const handleSaveMapping = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/save_mapping`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildRow()),
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      alert("Saved to Google Sheet (" + data.action + ")");
+    } catch (e: any) {
+      setError("Failed to save mapping: " + e.message);
+    }
+  };
   return (
     <div className={styles.saveMappingPopup}>
       <div className={styles.popupContent}>
@@ -182,7 +174,7 @@ export default function SaveMappingPopup({
             {popupData.leftCourseJSON.course_code}) →{" "}
             {popupData.rightCourseJSON.course_title}
           </p>
-          <button onClick={saveAsCSV} className={styles.csvButton}>
+          <button onClick={handleSaveMapping} className={styles.csvButton}>
             📥 Save as CSV
           </button>
         </div>
