@@ -7,7 +7,7 @@ const navItems = [
   { label: "Chat", href: "/chat" },
   { label: "Mapping", href: "/mapping" },
   { label: "Courses", href: "/courses" },
-  { label: "How to Use", href: "/help" },
+  { label: "How to Use", href: "/use" },
 ];
 
 export default function Nav() {

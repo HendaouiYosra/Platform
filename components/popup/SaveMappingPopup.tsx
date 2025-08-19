@@ -90,7 +90,6 @@ export default function SaveMappingPopup({
   );
 
   if (!isOpen) return null;
-const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (field: string, value: string) => {
     setMappingData((prev) => ({
@@ -130,7 +129,35 @@ const [error, setError] = useState<string | null>(null);
     }));
   };
 
- 
+const saveMappingToSheet = () => {
+  const row = {
+    Transfer_Institution: popupData.leftCourseJSON.institution || popupData.leftCourseJSON.course_institution || "",
+    Transfer_Course: popupData.leftCourseJSON.course_code|| "",
+    Transfer_Course_Term: popupData.leftCourseJSON.course_term_date || "",
+    Requested_Equivalent: popupData.rightCourseJSON.course_code || "",
+    Decision: mappingData.decision || "",
+    Rationale_Comments: mappingData.Comments || "",
+  };
+
+  // Optional: alert to verify data before sending
+  alert(JSON.stringify(row, null, 2));
+
+  fetch(`${API_BASE}/save_mapping`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(row),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("Save mapping result:", data);
+      alert("Mapping saved to sheet!");
+    })
+    .catch((err) => {
+      console.error("Save mapping error:", err);
+      alert("Error saving mapping.");
+    });
+};
+
   const handleSubmit = () => {
     onSubmit({
       mapResult: mappingData,
@@ -138,31 +165,7 @@ const [error, setError] = useState<string | null>(null);
       rightCourseJSON: popupData.rightCourseJSON,
     });
   };
-const buildRow = () => ({
-    "Transfer Institution": popupData.leftCourseJSON.course_institution || popupData.leftCourseJSON.institution || "",
-    "Transfer Course": popupData.leftCourseJSON.course_title || "",
-    "Transfer Course Term": popupData.leftCourseJSON.course_term_date || "",
-    "Requested Equivalent": popupData.rightCourseJSON.course_title || "",
-    "Decision": mappingData.decision || "",
-    "Rationale/Comments": mappingData.Comments || "",
-    // "Due" left out → backend auto-fills
-  });
 
-  const handleSaveMapping = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/save_mapping`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildRow()),
-      });
-
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      alert("Saved to Google Sheet (" + data.action + ")");
-    } catch (e: any) {
-      setError("Failed to save mapping: " + e.message);
-    }
-  };
   return (
     <div className={styles.saveMappingPopup}>
       <div className={styles.popupContent}>
@@ -174,7 +177,7 @@ const buildRow = () => ({
             {popupData.leftCourseJSON.course_code}) →{" "}
             {popupData.rightCourseJSON.course_title}
           </p>
-          <button onClick={handleSaveMapping} className={styles.csvButton}>
+          <button onClick={saveMappingToSheet} className={styles.csvButton}>
             📥 Save as CSV
           </button>
         </div>
